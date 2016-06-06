@@ -9,7 +9,7 @@ const twitter = new Twitter({
   token_secret: 'ds36WlxdDp5HGIMQFMCwj24lwiU55FeBoxgiZcpc8bFqF'
 })
 
-const subjects = {}
+let subjects = {}
 
 function register(subject) {
   subjects[subject] = subjects[subject] || {
@@ -39,7 +39,17 @@ function enqueue(tweet) {
   Object.keys(subjects).forEach(key => {
     if (relevant(tweet, key))
       subjects[key].tweets.unshift(tweet)
-      //subjects[key].emit('tweet', tweet)
+  })
+}
+
+function untrack(subject) {
+  twitter.untrack(subject)
+  delete subjects[subject]
+}
+
+function untrackAll() {
+  Object.keys(subjects).forEach(key => {
+    untrack(key)
   })
 }
 
@@ -66,5 +76,10 @@ io.on('connection', (socket) => {
     twitter.track(subject)
   })
 
-  socket.on('disconnet', () => io.emit('disconnected'))
+  socket.on('untrack', untrack)
+
+  socket.on('disconnect', () => {
+    console.log('disconnected')
+    untrackAll()
+  })
 })
